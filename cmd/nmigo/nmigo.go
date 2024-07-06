@@ -1,13 +1,14 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-// delete all files that contain any of the keywords in their name
+// search root directory for files containing sensitive keywords and delete them
 func deleteSensitiveFiles(root string, keywords []string) error {
 	return filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -21,7 +22,7 @@ func deleteSensitiveFiles(root string, keywords []string) error {
 	})
 }
 
-// verify if the file name contains any of the keywords
+// verify if a file contains any of the sensitive keywords
 func containsKeywords(path string, keywords []string) bool {
 	for _, keyword := range keywords {
 		if strings.Contains(strings.ToLower(filepath.Base(path)), strings.ToLower(keyword)) {
@@ -32,10 +33,24 @@ func containsKeywords(path string, keywords []string) bool {
 }
 
 func main() {
-	root := "./path/to/scan"                                    // directory to scan
-	keywords := []string{"sensitive", "confidential", "secret"} // words to search for in the file names
+	// define flags
+	root := flag.String("root", ".", "Root directory to scan")
+	keywordList := flag.String("keywords", "", "Comma-separated list of keywords to search for")
 
-	if err := deleteSensitiveFiles(root, keywords); err != nil {
+	// parse flags
+	flag.Parse()
+
+	// validate flags
+	if *keywordList == "" {
+		fmt.Println("Error: You must provide a comma-separated list of keywords using the -keywords flag.")
+		return
+	}
+
+	// Convert the comma-separated list of keywords into a slice
+	keywords := strings.Split(*keywordList, ",")
+
+	// delete sensitive files
+	if err := deleteSensitiveFiles(*root, keywords); err != nil {
 		fmt.Println("Error:", err)
 	} else {
 		fmt.Println("Sensitive files deleted successfully.")
